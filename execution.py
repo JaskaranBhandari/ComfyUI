@@ -149,7 +149,7 @@ class CacheSet:
 
 SENSITIVE_EXTRA_DATA_KEYS = ("auth_token_comfy_org", "api_key_comfy_org")
 
-def get_input_data(inputs, class_def, unique_id, execution_list=None, dynprompt=None, extra_data={}):
+def get_input_data(inputs, class_def, unique_id, execution_list=None, dynprompt=None, extra_data={}, prompt_id=None):
     is_v3 = issubclass(class_def, _ComfyNodeInternal)
     v3_data: io.V3Data = {}
     hidden_inputs_v3 = {}
@@ -196,6 +196,8 @@ def get_input_data(inputs, class_def, unique_id, execution_list=None, dynprompt=
                 hidden_inputs_v3[io.Hidden.auth_token_comfy_org] = extra_data.get("auth_token_comfy_org", None)
             if io.Hidden.api_key_comfy_org.name in hidden:
                 hidden_inputs_v3[io.Hidden.api_key_comfy_org] = extra_data.get("api_key_comfy_org", None)
+            if io.Hidden.prompt_id.name in hidden:
+                hidden_inputs_v3[io.Hidden.prompt_id] = prompt_id
     else:
         if "hidden" in valid_inputs:
             h = valid_inputs["hidden"]
@@ -212,6 +214,8 @@ def get_input_data(inputs, class_def, unique_id, execution_list=None, dynprompt=
                     input_data_all[x] = [extra_data.get("auth_token_comfy_org", None)]
                 if h[x] == "API_KEY_COMFY_ORG":
                     input_data_all[x] = [extra_data.get("api_key_comfy_org", None)]
+                if h[x] == "PROMPT_ID":
+                    input_data_all[x] = [prompt_id]
     v3_data["hidden_inputs"] = hidden_inputs_v3
     return input_data_all, missing_keys, v3_data
 
@@ -469,7 +473,7 @@ async def execute(server, dynprompt, caches, current_item, extra_data, executed,
             has_subgraph = False
         else:
             get_progress_state().start_progress(unique_id)
-            input_data_all, missing_keys, v3_data = get_input_data(inputs, class_def, unique_id, execution_list, dynprompt, extra_data)
+            input_data_all, missing_keys, v3_data = get_input_data(inputs, class_def, unique_id, execution_list, dynprompt, extra_data, prompt_id=prompt_id)
             if server.client_id is not None:
                 server.last_node_id = display_node_id
                 server.send_sync("executing", { "node": unique_id, "display_node": display_node_id, "prompt_id": prompt_id }, server.client_id)

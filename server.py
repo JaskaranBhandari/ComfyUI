@@ -1235,6 +1235,18 @@ class PromptServer():
     def send_progress_text(
         self, text: Union[bytes, bytearray, str], node_id: str, prompt_id: Optional[str] = None, sid=None
     ):
+        """Send a progress text message to the client via WebSocket.
+
+        Encodes the text as a binary message with length-prefixed node_id. When
+        prompt_id is provided and the client supports the ``supports_progress_text_metadata``
+        feature flag, the prompt_id is prepended as an additional length-prefixed field.
+
+        Args:
+            text: The progress text content to send.
+            node_id: The unique identifier of the node sending the progress.
+            prompt_id: Optional prompt/job identifier to associate the message with.
+            sid: Optional session ID to target a specific client.
+        """
         if isinstance(text, str):
             text = text.encode("utf-8")
         node_id_bytes = str(node_id).encode("utf-8")

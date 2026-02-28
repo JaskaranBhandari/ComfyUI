@@ -193,6 +193,8 @@ class HiddenInputTypeDict(TypedDict):
     """EXTRA_PNGINFO is a dictionary that will be copied into the metadata of any .png files saved. Custom nodes can store additional information in this dictionary for saving (or as a way to communicate with a downstream node)."""
     dynprompt: NotRequired[Literal["DYNPROMPT"]]
     """DYNPROMPT is an instance of comfy_execution.graph.DynamicPrompt. It differs from PROMPT in that it may mutate during the course of execution in response to Node Expansion."""
+    prompt_id: NotRequired[Literal["PROMPT_ID"]]
+    """PROMPT_ID is the unique identifier of the current prompt/job being executed. Useful for associating progress updates with specific jobs."""
 
 
 class InputTypeDict(TypedDict):

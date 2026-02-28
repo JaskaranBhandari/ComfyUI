@@ -437,6 +437,17 @@ def _display_text(
     status: str | int | None = None,
     price: float | None = None,
 ) -> None:
+    """Send a progress text message to the client for display on a node.
+
+    Assembles status, price, and text lines, then sends them via WebSocket.
+    Automatically retrieves the current prompt_id from the execution context.
+
+    Args:
+        node_cls: The ComfyNode class sending the progress text.
+        text: Optional text content to display.
+        status: Optional status string or code to display.
+        price: Optional price in dollars to display as credits.
+    """
     display_lines: list[str] = []
     if status:
         display_lines.append(f"Status: {status.capitalize() if isinstance(status, str) else status}")

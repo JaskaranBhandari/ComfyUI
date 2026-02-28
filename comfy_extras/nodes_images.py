@@ -566,7 +566,7 @@ class GetImageSize(IO.ComfyNode):
                 IO.Int.Output(display_name="height"),
                 IO.Int.Output(display_name="batch_size"),
             ],
-            hidden=[IO.Hidden.unique_id],
+            hidden=[IO.Hidden.unique_id, IO.Hidden.prompt_id],
         )
 
     @classmethod
@@ -577,10 +577,7 @@ class GetImageSize(IO.ComfyNode):
 
         # Send progress text to display size on the node
         if cls.hidden.unique_id:
-            from comfy_execution.utils import get_executing_context
-            ctx = get_executing_context()
-            prompt_id = ctx.prompt_id if ctx is not None else None
-            PromptServer.instance.send_progress_text(f"width: {width}, height: {height}\n batch size: {batch_size}", cls.hidden.unique_id, prompt_id=prompt_id)
+            PromptServer.instance.send_progress_text(f"width: {width}, height: {height}\n batch size: {batch_size}", cls.hidden.unique_id, prompt_id=cls.hidden.prompt_id)
 
         return IO.NodeOutput(width, height, batch_size)
 
