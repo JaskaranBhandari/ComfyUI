@@ -685,7 +685,6 @@ class PromptExecutor:
             self.add_message("execution_error", mes, broadcast=False)
 
     def _notify_prompt_lifecycle(self, event: str, prompt_id: str):
-        """Notify external cache providers of prompt lifecycle events."""
         from comfy_execution.cache_provider import _has_cache_providers, _get_cache_providers, _logger
 
         if not _has_cache_providers():
@@ -716,11 +715,9 @@ class PromptExecutor:
         self.status_messages = []
         self.add_message("execution_start", { "prompt_id": prompt_id}, broadcast=False)
 
-        # Set prompt ID on caches for external provider integration
         for cache in self.caches.all:
             cache._current_prompt_id = prompt_id
 
-        # Notify external cache providers of prompt start
         self._notify_prompt_lifecycle("start", prompt_id)
 
         try:
@@ -785,7 +782,6 @@ class PromptExecutor:
                 if comfy.model_management.DISABLE_SMART_MEMORY:
                     comfy.model_management.unload_all_models()
         finally:
-            # Notify external cache providers of prompt end
             self._notify_prompt_lifecycle("end", prompt_id)
 
 

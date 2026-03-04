@@ -156,7 +156,6 @@ class BasicCache:
         self.cache = {}
         self.subcaches = {}
 
-        # External cache provider support
         self._is_subcache = False
         self._current_prompt_id = ''
 
@@ -202,7 +201,6 @@ class BasicCache:
         pass
 
     def get_local(self, node_id):
-        """Sync local-only cache lookup (no external providers)."""
         if not self.initialized:
             return None
         cache_key = self.cache_key_set.get_data_key(node_id)
@@ -211,7 +209,6 @@ class BasicCache:
         return None
 
     def set_local(self, node_id, value):
-        """Sync local-only cache store (no external providers)."""
         assert self.initialized
         cache_key = self.cache_key_set.get_data_key(node_id)
         self.cache[cache_key] = value
@@ -221,7 +218,6 @@ class BasicCache:
         cache_key = self.cache_key_set.get_data_key(node_id)
         self.cache[cache_key] = value
 
-        # Notify external providers
         await self._notify_providers_store(node_id, cache_key, value)
 
     async def _get_immediate(self, node_id):
@@ -229,26 +225,22 @@ class BasicCache:
             return None
         cache_key = self.cache_key_set.get_data_key(node_id)
 
-        # Check local cache first (fast path)
         if cache_key in self.cache:
             return self.cache[cache_key]
 
-        # Check external providers on local miss
         external_result = await self._check_providers_lookup(node_id, cache_key)
         if external_result is not None:
-            self.cache[cache_key] = external_result  # Warm local cache
+            self.cache[cache_key] = external_result
             return external_result
 
         return None
 
     async def _notify_providers_store(self, node_id, cache_key, value):
-        """Notify external providers of cache store (non-blocking)."""
         from comfy_execution.cache_provider import (
             _has_cache_providers, _get_cache_providers,
             CacheValue, _contains_nan, _logger
         )
 
-        # Fast exit conditions
         if self._is_subcache:
             return
         if not _has_cache_providers():
@@ -272,7 +264,6 @@ class BasicCache:
 
     @staticmethod
     async def _safe_provider_store(provider, context, cache_value):
-        """Wrapper for async provider.on_store with error handling."""
         from comfy_execution.cache_provider import _logger
         try:
             await provider.on_store(context, cache_value)
@@ -280,7 +271,6 @@ class BasicCache:
             _logger.warning(f"Cache provider {provider.__class__.__name__} async store error: {e}")
 
     async def _check_providers_lookup(self, node_id, cache_key):
-        """Check external providers for cached result."""
         from comfy_execution.cache_provider import (
             _has_cache_providers, _get_cache_providers,
             CacheValue, _contains_nan, _logger
@@ -309,7 +299,6 @@ class BasicCache:
                     if not isinstance(result.outputs, (list, tuple)):
                         _logger.warning(f"Provider {provider.__class__.__name__} returned invalid outputs")
                         continue
-                    # Import CacheEntry here to avoid circular import at module level
                     from execution import CacheEntry
                     return CacheEntry(ui=result.ui or {}, outputs=list(result.outputs))
             except Exception as e:
@@ -318,11 +307,9 @@ class BasicCache:
         return None
 
     def _is_external_cacheable_value(self, value):
-        """Check if value is a CacheEntry suitable for external caching (not objects cache)."""
         return hasattr(value, 'outputs') and hasattr(value, 'ui')
 
     def _get_class_type(self, node_id):
-        """Get class_type for a node."""
         if not self.initialized or not self.dynprompt:
             return ''
         try:
@@ -331,7 +318,6 @@ class BasicCache:
             return ''
 
     def _build_context(self, node_id, cache_key):
-        """Build CacheContext with hash. Returns None if hashing fails."""
         from comfy_execution.cache_provider import CacheContext, _serialize_cache_key, _logger
         try:
             cache_key_hash = _serialize_cache_key(cache_key)
@@ -352,8 +338,8 @@ class BasicCache:
         subcache = self.subcaches.get(subcache_key, None)
         if subcache is None:
             subcache = BasicCache(self.key_class)
-            subcache._is_subcache = True  # Mark as subcache - excludes from external caching
-            subcache._current_prompt_id = self._current_prompt_id  # Propagate prompt ID
+            subcache._is_subcache = True
+            subcache._current_prompt_id = self._current_prompt_id
             self.subcaches[subcache_key] = subcache
         await subcache.set_prompt(self.dynprompt, children_ids, self.is_changed_cache)
         return subcache
