@@ -13,6 +13,7 @@ from pydantic import ValidationError
 import folder_paths
 from app import user_manager
 from app.assets.api import schemas_in, schemas_out
+from app.assets.services import schemas
 from app.assets.api.schemas_in import (
     AssetValidationError,
     UploadError,
@@ -123,7 +124,7 @@ def _validate_sort_field(requested: str | None) -> str:
     return "created_at"
 
 
-def _build_asset_response(result) -> schemas_out.Asset:
+def _build_asset_response(result: schemas.AssetDetailResult | schemas.UploadResult) -> schemas_out.Asset:
     """Build an Asset response from a service result."""
     preview_url = None
     if result.ref.preview_id:
@@ -132,7 +133,7 @@ def _build_asset_response(result) -> schemas_out.Asset:
         id=result.ref.id,
         name=result.ref.name,
         asset_hash=result.asset.hash if result.asset else None,
-        size=int(result.asset.size_bytes) if result.asset else 0,
+        size=int(result.asset.size_bytes) if result.asset else None,
         mime_type=result.asset.mime_type if result.asset else None,
         tags=result.tags,
         preview_url=preview_url,
@@ -386,6 +387,14 @@ async def upload_asset(request: web.Request) -> web.Response:
                 owner_id=owner_id,
             )
             if existing:
+                # Validate that uploaded content matches existing asset
+                if spec.hash and existing.asset and existing.asset.hash != spec.hash:
+                    delete_temp_file_if_exists(parsed.tmp_path)
+                    return _build_error_response(
+                        409,
+                        "HASH_MISMATCH",
+                        "Uploaded file hash does not match existing asset.",
+                    )
                 delete_temp_file_if_exists(parsed.tmp_path)
                 asset = _build_asset_response(existing)
                 payload_out = schemas_out.AssetCreated(

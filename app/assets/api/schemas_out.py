@@ -8,7 +8,7 @@ class Asset(BaseModel):
     id: str
     name: str
     asset_hash: str | None = None
-    size: int = 0
+    size: int | None = None
     mime_type: str | None = None
     tags: list[str] = Field(default_factory=list)
     preview_url: str | None = None

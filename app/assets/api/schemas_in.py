@@ -121,7 +121,7 @@ class CreateFromHashBody(BaseModel):
 
     hash: str
     name: str | None = None
-    tags: list[str] = Field(default_factory=list, min_length=1)
+    tags: list[str] = Field(default_factory=list)
     user_metadata: dict[str, Any] = Field(default_factory=dict)
     mime_type: str | None = None
 
