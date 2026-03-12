@@ -108,10 +108,11 @@ def update_asset_metadata(
             touched = True
 
         if mime_type is not None:
-            update_asset_hash_and_mime(
+            updated = update_asset_hash_and_mime(
                 session, asset_id=ref.asset_id, mime_type=mime_type
             )
-            touched = True
+            if updated:
+                touched = True
 
         if preview_id is not None:
             set_reference_preview(

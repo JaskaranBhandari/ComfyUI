@@ -146,7 +146,7 @@ def _register_existing_asset(
         if not asset:
             raise ValueError(f"No asset with hash {asset_hash}")
 
-        if mime_type and asset.mime_type != mime_type:
+        if mime_type and not asset.mime_type:
             update_asset_hash_and_mime(session, asset_id=asset.id, mime_type=mime_type)
 
         if preview_id:
