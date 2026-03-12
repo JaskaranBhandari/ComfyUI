@@ -23,10 +23,10 @@ class ReferenceData:
     file_path: str | None
     user_metadata: UserMetadata
     preview_id: str | None
+    created_at: datetime
+    updated_at: datetime
     system_metadata: dict[str, Any] | None = None
     prompt_id: str | None = None
-    created_at: datetime = None  # type: ignore[assignment]
-    updated_at: datetime = None  # type: ignore[assignment]
     last_access_time: datetime | None = None
 
 
