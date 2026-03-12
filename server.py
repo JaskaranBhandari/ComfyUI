@@ -35,6 +35,7 @@ from app.frontend_management import FrontendManager, parse_version
 from comfy_api.internal import _ComfyNodeInternal
 from app.assets.seeder import asset_seeder
 from app.assets.api.routes import register_assets_routes
+from app.assets.services.ingest import register_file_in_place
 
 from app.user_manager import UserManager
 from app.model_manager import ModelFileManager
@@ -163,7 +164,11 @@ def create_origin_only_middleware():
             if host_domain_parsed.port is None:
                 origin_domain = parsed.hostname
 
-            if loopback and host_domain is not None and origin_domain is not None and len(host_domain) > 0 and len(origin_domain) > 0:
+            # When both host and origin are loopback, allow port differences
+            # (e.g. frontend dev server on :5173 proxying to backend on :8188)
+            if loopback and is_loopback(parsed.hostname):
+                pass
+            elif loopback and host_domain is not None and origin_domain is not None and len(host_domain) > 0 and len(origin_domain) > 0:
                 if host_domain != origin_domain:
                     logging.warning("WARNING: request with non matching host and origin {} != {}, returning 403".format(host_domain, origin_domain))
                     return web.Response(status=403)
@@ -419,7 +424,24 @@ class PromptServer():
                         with open(filepath, "wb") as f:
                             f.write(image.file.read())
 
-                return web.json_response({"name" : filename, "subfolder": subfolder, "type": image_upload_type})
+                resp = {"name" : filename, "subfolder": subfolder, "type": image_upload_type}
+
+                if args.enable_assets:
+                    try:
+                        tag = image_upload_type if image_upload_type in ("input", "output") else "input"
+                        result = register_file_in_place(abs_path=filepath, name=filename, tags=[tag])
+                        resp["asset"] = {
+                            "id": result.ref.id,
+                            "name": result.ref.name,
+                            "asset_hash": result.asset.hash if result.asset else None,
+                            "size": result.asset.size_bytes if result.asset else None,
+                            "mime_type": result.asset.mime_type if result.asset else None,
+                            "tags": result.tags,
+                        }
+                    except Exception:
+                        logging.warning("Failed to register uploaded image as asset", exc_info=True)
+
+                return web.json_response(resp)
             else:
                 return web.Response(status=400)
 
