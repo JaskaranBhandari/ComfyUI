@@ -107,25 +107,13 @@ class ComfyAPI_latest(ComfyAPIBase):
 
         async def register_provider(self, provider: "ComfyAPI_latest.Caching.CacheProvider") -> None:
             """Register an external cache provider. Providers are called in registration order."""
-            from comfy_execution import cache_provider as _cp
-            with _cp._providers_lock:
-                if provider in _cp._providers:
-                    _cp._logger.warning(f"Provider {provider.__class__.__name__} already registered")
-                    return
-                _cp._providers.append(provider)
-                _cp._providers_snapshot = tuple(_cp._providers)
-                _cp._logger.debug(f"Registered cache provider: {provider.__class__.__name__}")
+            from comfy_execution.cache_provider import register_cache_provider
+            register_cache_provider(provider)
 
         async def unregister_provider(self, provider: "ComfyAPI_latest.Caching.CacheProvider") -> None:
             """Unregister a previously registered cache provider."""
-            from comfy_execution import cache_provider as _cp
-            with _cp._providers_lock:
-                try:
-                    _cp._providers.remove(provider)
-                    _cp._providers_snapshot = tuple(_cp._providers)
-                    _cp._logger.debug(f"Unregistered cache provider: {provider.__class__.__name__}")
-                except ValueError:
-                    _cp._logger.warning(f"Provider {provider.__class__.__name__} was not registered")
+            from comfy_execution.cache_provider import unregister_cache_provider
+            unregister_cache_provider(provider)
 
 class ComfyExtension(ABC):
     async def on_load(self) -> None:

@@ -726,10 +726,14 @@ class PromptExecutor:
                     await cache.set_prompt(dynamic_prompt, prompt.keys(), is_changed_cache)
                     cache.clean_unused()
 
-                cached_nodes = []
-                for node_id in prompt:
-                    if await self.caches.outputs.get(node_id) is not None:
-                        cached_nodes.append(node_id)
+                node_ids = list(prompt.keys())
+                cache_results = await asyncio.gather(
+                    *(self.caches.outputs.get(node_id) for node_id in node_ids)
+                )
+                cached_nodes = [
+                    node_id for node_id, result in zip(node_ids, cache_results)
+                    if result is not None
+                ]
 
                 comfy.model_management.cleanup_models_gc()
                 self.add_message("execution_cached",

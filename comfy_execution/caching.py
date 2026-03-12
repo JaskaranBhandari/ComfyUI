@@ -155,6 +155,7 @@ class BasicCache:
         self.cache_key_set: CacheKeySet
         self.cache = {}
         self.subcaches = {}
+        self._pending_store_tasks: set = set()
 
     async def set_prompt(self, dynprompt, node_ids, is_changed_cache):
         self.dynprompt = dynprompt
@@ -253,7 +254,9 @@ class BasicCache:
         for provider in _get_cache_providers():
             try:
                 if provider.should_cache(context, cache_value):
-                    asyncio.create_task(self._safe_provider_store(provider, context, cache_value))
+                    task = asyncio.create_task(self._safe_provider_store(provider, context, cache_value))
+                    self._pending_store_tasks.add(task)
+                    task.add_done_callback(self._pending_store_tasks.discard)
             except Exception as e:
                 _logger.warning(f"Cache provider {provider.__class__.__name__} error on store: {e}")
 
