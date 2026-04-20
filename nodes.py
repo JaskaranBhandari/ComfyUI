@@ -593,7 +593,7 @@ class CheckpointLoaderSimple:
                 "ckpt_name": (folder_paths.get_filename_list("checkpoints"), {"tooltip": "The name of the checkpoint (model) to load."}),
             },
             "optional": {
-                "device": (comfy.model_management.get_gpu_device_options(), {"advanced": True}),
+                "device": (comfy.model_management.get_gpu_device_options(), {"advanced": True, "tooltip": "Target GPU device. Use 'default' for automatic, 'cpu' for CPU, or 'gpu:N' for a specific GPU."}),
             }
         }
     RETURN_TYPES = ("MODEL", "CLIP", "VAE")
@@ -605,6 +605,10 @@ class CheckpointLoaderSimple:
     CATEGORY = "loaders"
     DESCRIPTION = "Loads a diffusion model checkpoint, diffusion models are used to denoise latents."
     SEARCH_ALIASES = ["load model", "checkpoint", "model loader", "load checkpoint", "ckpt", "model"]
+
+    @classmethod
+    def VALIDATE_INPUTS(cls, device="default"):
+        return True
 
     def load_checkpoint(self, ckpt_name, device="default"):
         ckpt_path = folder_paths.get_full_path_or_raise("checkpoints", ckpt_name)
@@ -823,6 +827,10 @@ class VAELoader:
 
     CATEGORY = "loaders"
 
+    @classmethod
+    def VALIDATE_INPUTS(cls, device="default"):
+        return True
+
     #TODO: scale factor?
     def load_vae(self, vae_name, device="default"):
         metadata = None
@@ -973,6 +981,10 @@ class UNETLoader:
 
     CATEGORY = "advanced/loaders"
 
+    @classmethod
+    def VALIDATE_INPUTS(cls, device="default"):
+        return True
+
     def load_unet(self, unet_name, weight_dtype, device="default"):
         model_options = {}
         if weight_dtype == "fp8_e4m3fn":
@@ -1007,6 +1019,10 @@ class CLIPLoader:
 
     DESCRIPTION = "[Recipes]\n\nstable_diffusion: clip-l\nstable_cascade: clip-g\nsd3: t5 xxl/ clip-g / clip-l\nstable_audio: t5 base\nmochi: t5 xxl\ncosmos: old t5 xxl\nlumina2: gemma 2 2B\nwan: umt5 xxl\n hidream: llama-3.1 (Recommend) or t5\nomnigen2: qwen vl 2.5 3B"
 
+    @classmethod
+    def VALIDATE_INPUTS(cls, device="default"):
+        return True
+
     def load_clip(self, clip_name, type="stable_diffusion", device="default"):
         clip_type = getattr(comfy.sd.CLIPType, type.upper(), comfy.sd.CLIPType.STABLE_DIFFUSION)
 
@@ -1038,6 +1054,10 @@ class DualCLIPLoader:
     CATEGORY = "advanced/loaders"
 
     DESCRIPTION = "[Recipes]\n\nsdxl: clip-l, clip-g\nsd3: clip-l, clip-g / clip-l, t5 / clip-g, t5\nflux: clip-l, t5\nhidream: at least one of t5 or llama, recommended t5 and llama\nhunyuan_image: qwen2.5vl 7b and byt5 small\nnewbie: gemma-3-4b-it, jina clip v2"
+
+    @classmethod
+    def VALIDATE_INPUTS(cls, device="default"):
+        return True
 
     def load_clip(self, clip_name1, clip_name2, type, device="default"):
         clip_type = getattr(comfy.sd.CLIPType, type.upper(), comfy.sd.CLIPType.STABLE_DIFFUSION)
